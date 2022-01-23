@@ -1,0 +1,147 @@
+Создание компонента QueryBuilder  (Работа с базы данными)
+
+•	Создаем файл с именем QueryBuilder.php, в нем класс с таким же именем
+Для работы с базой нужны 3 основные действия: create, update, delete (в них пока ничего не пишем)
+•	Создание create 
+•	Создание update
+•	Создание delete 
+Далее? для выборки данных из базы нужны еще 2 функции, getAll и getOne, добавляем:
+•	Создание getAll 
+•	Создание getOne
+Для работы с функциями сначала нужно сделать подключение к базе, делаем:
+•	Создаем переменную, которая будет работать только внутри класса
+•	Делаем подключение PDO, и передаем ее переменной pdo, в функции которая будет вызываться сразу при формировании запросов к базе через __construct
+Для проверки работы компоненты, вернее только то что пока сделал, сделаю индексную страницу, и там вызову класс с объектом pdo
+•	Делаю index.php
+•	Делаю функцию dd() для вардампа, чтобы читабельней был выводимый текст, оставлю ее пока в индексе, делаю же только для проверки компоненты
+•	Подключаем в индексе нашу компоненту QueryBuilder через require;
+•	Так как $pdo у нас была только для внутреннего использования, временно сделаю ее публичную, чтобы проверить подключение; 
+•	Проверка прошла, pdo показал мне состоявшееся подключение.
+Возвращаемся к методу create, пишем код для полноценной работы.
+Функция create будет нам добавлять в определенную таблицу базы информацию из массива, поэтому, мы будем ему передавать имя таблицы, и массив, ключи будут имена колон таблицы, а также будет возвращать id новой строки; 
+•	Пишем параметры $table (type string) и  $data (type array) 
+•	Имитирую sql запрос в строку чтоб наглядно увидеть как работает, передаю его $sql ($sql = "INSERT INTO post SET title = :title";)
+•	 Подготавливаю запрос и передаю его в $statement ($statement = $this->pdo->prepare($sql);  )
+•	Выполняю:  (  $statement->execute(['title' => 'привет']);)
+•	Возвращаем id созданной строки ( return $this->pdo->lastInsertId();)
+•	Проверяем в index.php: dd($qb->create('',''));
+•	Dd нам показал id последней нашей строки, все работает.
+Теперь нам нужно сымитировать получение данных из массива с несколько колонок, и именем таблицы:
+•	пишем в методе массив дата   и переменную table (     $table = 'post';   $data = ['title' => 'пока'];
+•	делаем пустую переменную keys чтобы записать в дальнейшем в ней string 
+•	так как  data это массив, запускаем foreeach чтобы по кругу соединить параметры keys для sql  (foreach ($data as $key => $datum) {
+•	            $keys.= $key.' = :'.$key.', ';
+•	        }  )
+•	Убираю последние ненужные знаки «, » ($keys = rtrim($keys,', '); )
+•	В sql запросе для prepare указываю переменные ($sql = "INSERT INTO {$table} SET {$keys}";  ) 
+•	Проверяю (dd($qb->create('','')); ) на index.php, получаю последний id. 
+•	Убираю лишнее (проверочные массивы), пишу документацию, 
+Метод create в QueryBuilder готов!
+
+/**
+ * @param string $table - имя таблицы
+ * @param array $data - данные в массиве с ключами как наименование колон таблицы 
+ * @return integer id - возвращает id записанной строки или ноль если не записалось
+
+ */
+public function create($table = '', $data = [])
+{
+    $keys='';
+    foreach ($data as $key => $datum) {
+        $keys.= $key.' = :'.$key.', ';
+    }
+    $keys = rtrim($keys,', ');
+    $sql = "INSERT INTO {$table} SET {$keys}";
+    $statement = $this->pdo->prepare($sql);
+    $statement->execute($data);
+    return $this->pdo->lastInsertId();
+}
+
+
+Дописываем update:
+Update получает 2 параметра, имя таблицы $table и массив с данными, ключи так же имена колонок, с разницей что здесь уже есть и id
+•	Пишем параметры ($table = '', $data= [] ) 
+•	Остальной код беру из create так как почти все повторяется, убираю ненужный lastinsertId.
+•	На этот раз в массив data есть ключ id, который нужно отделить от основной информацией, стираем $data['id'] (unset( $data['id']));  предварительно сохранив id в  $id ($id = $data['id'];  )
+•	После формирования строки с метками из ключей массива, устанавливаем  $data[‘id’] = $id, чтобы можно было передать в execute одним массивом
+•	Редактируем sql запрос под update ( UPDATE {$table} SET {$keys} WHERE id = :id ), так как параметр id не меняется, его так и оставляем.
+•	Проверяем в Index.php (dd($qb->update('post',['title'=>'alshkdfaksjdasdh','id' => 14])); ), получили true метод работает
+•	Пишем документацию
+•	/**
+ * @param string $table -  имя таблицы
+ * @param array $data  - данные в массиве с ключами как наименование  колон таблицы 
+ */
+public function update($table = '', $data= [])
+{
+    $id = $data['id'];
+    unset( $data['id']);
+    $keys='';
+    foreach ($data as $key => $datum) {
+        $keys.= $key.' = :'.$key.', ';
+    }
+    $data['id'] = $id;
+    $keys = rtrim($keys,', ');
+    $sql = "UPDATE {$table} SET {$keys} WHERE id = :id";
+    $statement = $this->pdo->prepare($sql);
+    $statement->execute($data);
+}
+
+Дописываем delete:
+•	В delete нужны параметры, $table (имя таблицы откуда удаляем запись) и id (номер записи), указываем их как параметр методу 
+•	Готовим sql запрос с меткой id  выполняем после чего возвращаем true если все успешно
+(  $sql = "DELETE FROM {$table} WHERE id = :id";
+        $statement = $this->pdo->prepare($sql);
+        return $statement->execute(['id'=>$id] );  )
+•	После успешной проверки пишем доки
+•	/**
+ * @param string $table - имя таблицы
+ * @param integer $id удаляеммой записи
+ */
+public function delete($table = '', $id)
+{
+    $sql = "DELETE FROM {$table} WHERE id = :id";
+    $statement = $this->pdo->prepare($sql);
+    $statement->execute(['id'=>$id] );
+
+}
+
+
+Делаем getOne (получает одну запись по id):
+•	Так как нам нужно достать из какой-то таблицы строку с определённом id, как параметр указываем $table (имя таблицы) и id
+•	Готовим sql запрос, передаем его в статемент, и выполняем
+•	Далее через fеtch возвращаем ассоциативный массив
+•	Проверяем, все готово! Пишем доки
+•	/**
+ * @param string $table - имя таблицы
+ * @param int $id - ид запрашиваеммой записи
+ * @return mixed - возвращает ассоциативный массив если отработало без ошибок, иначе false
+ */
+public function getOne($table = '', $id = 0)
+{
+    $sql = "SELECT * FROM {$table} WHERE  id = :id";
+    $statement = $this->pdo->prepare($sql);
+    $statement->execute(['id'=>$id]);
+    return $statement->fetch(PDO::FETCH_ASSOC);
+}
+
+Делаем getAll (получаем все записи):
+•	Делаем тоже самое что и в, только без id
+•	Вместо fetch делаем fetchAll
+•	Получаем 2-уровневый массив.
+•	Пишем документацию
+/**
+ * @param string $table имя таблицы
+ * @return array  -    Получаем 2-уровневый массив.
+ */
+public function getAll($table = '')
+{
+    $sql = "SELECT * FROM {$table}";
+    $statement = $this->pdo->prepare($sql);
+    $statement->execute();
+    return $statement->fetchAll(PDO::FETCH_ASSOC);
+
+}
+
+
+
+
