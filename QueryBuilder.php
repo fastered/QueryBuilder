@@ -7,7 +7,7 @@ class QueryBuilder
 
     function __construct()
     {
-        $this->pdo = new PDO('mysql:host=192.168.1.14;dbname=studies2;charset=utf8','student','Student123123456!');
+        $this->pdo = new PDO('mysql:host=yourhostname;dbname=yordbname;charset=utf8','usernameDB','PASSWORD');
 
     }
 
