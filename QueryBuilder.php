@@ -5,11 +5,16 @@ class QueryBuilder
 {
     protected $pdo;
 
-    function __construct()
-    {
-        $this->pdo = new PDO('mysql:host=yourhostname;dbname=yordbname;charset=utf8','usernameDB','PASSWORD');
-
+    function __construct($pdo)
+    {       
+          if($pdo == null){
+            $this->pdo = new PDO('mysql:host=yourhostname;dbname=yordbname;charset=utf8','usernameDB','PASSWORD');
+        }else{
+            $this->pdo = $pdo;
+        }
     }
+    
+    
 
     /**
      * @param string $table - имя таблицы
