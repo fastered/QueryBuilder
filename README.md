@@ -45,8 +45,8 @@ $db->delete('users', 11);
 $data = $db->getAll('users');
 
 ```
-### GetAll:
+### GetOne:
 Возвращает одну запись из таблицы, передавать ему нужно имя таблицы, id нужной нам строки
 ```php
-$data = $db->getAll('users');
+$data = $db->getOne('users', '10');
 ```
