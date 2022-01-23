@@ -5,7 +5,7 @@
 •	Создание create 
 •	Создание update
 •	Создание delete 
-Далее? для выборки данных из базы нужны еще 2 функции, getAll и getOne, добавляем:
+Далее, для выборки данных из базы нужны еще 2 функции, getAll и getOne, добавляем:
 •	Создание getAll 
 •	Создание getOne
 Для работы с функциями сначала нужно сделать подключение к базе, делаем:
@@ -142,6 +142,17 @@ public function getAll($table = '')
 
 }
 
+Для того что-бы можно было в класс передавать PDO, отредактировал __construct, чтобы можно было его получить
+
+    function __construct($pdo = null)
+    {
+        if($pdo == null){
+            $this->pdo = new PDO('mysql:host=host;dbname=studies;charset=utf8','username','password');
+        }else{
+            $this->pdo = $pdo;
+        }
+
+    }
 
 
 
